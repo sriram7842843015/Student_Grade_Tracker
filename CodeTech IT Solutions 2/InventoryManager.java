@@ -4,254 +4,224 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class InventoryManager extends JFrame {
-    private Inventory inventory;
-    private User user;
-    private JTextField idField, nameField, quantityField, priceField, thresholdField;
-    private JTextArea reportArea;
+class StudentMarks {
+    private ArrayList<Double> marks;
+    private String studentName;
 
-    public InventoryManager() {
-        inventory = new Inventory();
-        user = new User("admin", "password");
+    public StudentMarks(String studentName) {
+        this.marks = new ArrayList<>();
+        this.studentName = studentName;
+    }
 
-        setTitle("Inventory Manager");
+    public void addMark(double mark) {
+        marks.add(mark);
+    }
+
+    public double calculateAverage() {
+        if (marks.isEmpty()) {
+            return 0.0;
+        }
+        double sum = 0;
+        for (double mark : marks) {
+            sum += mark;
+        }
+        return sum / marks.size();
+    }
+
+    public char getOverallMark(double average) {
+        if (average >= 90) {
+            return 'A';
+        } else if (average >= 80) {
+            return 'B';
+        } else if (average >= 70) {
+            return 'C';
+        } else if (average >= 60) {
+            return 'D';
+        } else {
+            return 'F';
+        }
+    }
+
+    public double getGPA(double mark) {
+        if (mark >= 91) {
+            return 10.0;
+        } else if (mark >= 81) {
+            return 9.0;
+        } else if (mark >= 71) {
+            return 8.0;
+        } else if (mark >= 61) {
+            return 7.0;
+        } else if (mark >= 51) {
+            return 6.0;
+        } else if (mark >= 41) {
+            return 5.0;
+        } else {
+            return 0.0;
+        }
+    }
+
+    public String displayMarks() {
+        StringBuilder result = new StringBuilder();
+        double sumGPA = 0.0;
+        int failCount = 0;
+        int subjectCount = marks.size();
+
+        for (double mark : marks) {
+            double gpa = getGPA(mark);
+            if (gpa == 0.0) {
+                failCount++;
+            } else {
+                sumGPA += gpa;
+            }
+        }
+
+        if (failCount > 0) {
+            result.append("Student: ").append(studentName).append("\n");
+            result.append("Number of subjects failed: ").append(failCount).append("\n");
+        } else {
+            double averageGPA = sumGPA / subjectCount;
+            char grade = getOverallMark(averageGPA * 10);
+            result.append("Student: ").append(studentName).append("\n");
+            result.append("GPA: ").append(String.format("%.2f", averageGPA)).append("\n");
+            result.append("Overall Grade: ").append(grade).append("\n");
+        }
+
+        return result.toString();
+    }
+}
+
+class StudentMarksGUI extends JFrame {
+    private JTextField studentNameField;
+    private JTextField numberOfSubjectsField;
+    private JTextArea marksArea;
+    private JTextArea resultArea;
+
+    public StudentMarksGUI() {
+        setTitle("Student Marks");
         setSize(600, 400);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10));
 
-        // Authentication Panel
-        JPanel authPanel = new JPanel();
-        authPanel.setLayout(new GridLayout(3, 2));
-        JTextField userField = new JTextField();
-        JPasswordField passField = new JPasswordField();
-        JButton loginButton = new JButton("Login");
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        inputPanel.setBackground(Color.decode("#BE41A6"));
 
-        authPanel.add(new JLabel("Username:"));
-        authPanel.add(userField);
-        authPanel.add(new JLabel("Password:"));
-        authPanel.add(passField);
-        authPanel.add(new JLabel());
-        authPanel.add(loginButton);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        add(authPanel, BorderLayout.NORTH);
+        JLabel studentNameLabel = new JLabel("Enter student name:");
+        studentNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        studentNameLabel.setForeground(Color.BLACK);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(studentNameLabel, gbc);
 
-        // Main Panel
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayout(6, 2));
+        studentNameField = new JTextField(20);
+        studentNameField.setFont(new Font("Arial", Font.PLAIN, 14));
+        studentNameField.setForeground(Color.BLACK);
+        studentNameField.setBackground(Color.decode("#41A6BE"));
+        gbc.gridx = 1;
+        inputPanel.add(studentNameField, gbc);
 
-        idField = new JTextField();
-        nameField = new JTextField();
-        quantityField = new JTextField();
-        priceField = new JTextField();
-        thresholdField = new JTextField();
+        JLabel numberOfSubjectsLabel = new JLabel("Enter number of subjects:");
+        numberOfSubjectsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        numberOfSubjectsLabel.setForeground(Color.BLACK);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(numberOfSubjectsLabel, gbc);
 
-        mainPanel.add(new JLabel("Product ID:"));
-        mainPanel.add(idField);
-        mainPanel.add(new JLabel("Product Name:"));
-        mainPanel.add(nameField);
-        mainPanel.add(new JLabel("Quantity:"));
-        mainPanel.add(quantityField);
-        mainPanel.add(new JLabel("Price:"));
-        mainPanel.add(priceField);
-        mainPanel.add(new JLabel("Low Stock Threshold:"));
-        mainPanel.add(thresholdField);
+        numberOfSubjectsField = new JTextField(20);
+        numberOfSubjectsField.setFont(new Font("Arial", Font.PLAIN, 14));
+        numberOfSubjectsField.setForeground(Color.BLACK);
+        numberOfSubjectsField.setBackground(Color.decode("#41A6BE"));
+        gbc.gridx = 1;
+        inputPanel.add(numberOfSubjectsField, gbc);
 
-        JButton addButton = new JButton("Add Product");
-        JButton editButton = new JButton("Edit Product");
-        JButton deleteButton = new JButton("Delete Product");
-        JButton reportButton = new JButton("Generate Report");
+        JLabel marksLabel = new JLabel("Enter marks for subjects (comma-separated):");
+        marksLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        marksLabel.setForeground(Color.BLACK);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        inputPanel.add(marksLabel, gbc);
 
-        mainPanel.add(addButton);
-        mainPanel.add(editButton);
-        mainPanel.add(deleteButton);
-        mainPanel.add(reportButton);
+        marksArea = new JTextArea(5, 20);
+        marksArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        marksArea.setForeground(Color.BLACK);
+        marksArea.setBackground(Color.decode("#41A6BE"));
+        marksArea.setLineWrap(true);
+        marksArea.setWrapStyleWord(true);
+        gbc.gridx = 1;
+        inputPanel.add(new JScrollPane(marksArea), gbc);
 
-        add(mainPanel, BorderLayout.CENTER);
+        JLabel resultLabel = new JLabel("Results:");
+        resultLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        resultLabel.setForeground(Color.BLACK);
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        inputPanel.add(resultLabel, gbc);
 
-        // Report Area
-        reportArea = new JTextArea();
-        JScrollPane scrollPane = new JScrollPane(reportArea);
-        add(scrollPane, BorderLayout.SOUTH);
+        resultArea = new JTextArea(5, 20);
+        resultArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        resultArea.setForeground(Color.BLACK);
+        resultArea.setBackground(Color.decode("#41A6BE"));
+        resultArea.setEditable(false);
+        resultArea.setLineWrap(true);
+        resultArea.setWrapStyleWord(true);
+        resultArea.setText("Results display here");
+        gbc.gridx = 1;
+        inputPanel.add(new JScrollPane(resultArea), gbc);
 
-        // Button Actions
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String username = userField.getText();
-                String password = new String(passField.getPassword());
-                if (user.getUsername().equals(username) && user.authenticate(password)) {
-                    authPanel.setVisible(false);
-                    mainPanel.setVisible(true);
-                } else {
-                    JOptionPane.showMessageDialog(null, "Invalid credentials", "Error", JOptionPane.ERROR_MESSAGE);
+        JButton calculateButton = new JButton("Calculate");
+        calculateButton.setFont(new Font("Arial", Font.BOLD, 14));
+        calculateButton.setBackground(Color.BLUE);
+        calculateButton.setForeground(Color.WHITE);
+        calculateButton.addActionListener(new CalculateListener());
+
+        add(inputPanel, BorderLayout.CENTER);
+        add(calculateButton, BorderLayout.SOUTH);
+
+        setVisible(true);
+    }
+
+    private class CalculateListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            String studentName = studentNameField.getText();
+            int numberOfSubjects;
+            try {
+                numberOfSubjects = Integer.parseInt(numberOfSubjectsField.getText());
+            } catch (NumberFormatException ex) {
+                resultArea.setText("Invalid number of subjects. Please enter a valid number.");
+                return;
+            }
+            String[] marksInput = marksArea.getText().split(",");
+            StudentMarks studentMarks = new StudentMarks(studentName);
+
+            if (marksInput.length != numberOfSubjects) {
+                resultArea.setText("Number of marks entered does not match the number of subjects.");
+                return;
+            }
+
+            for (String markStr : marksInput) {
+                try {
+                    double mark = Double.parseDouble(markStr.trim());
+                    if (mark >= 0 && mark <= 100) {
+                        studentMarks.addMark(mark);
+                    } else {
+                        resultArea.setText("Invalid mark. Please enter values between 0 and 100.");
+                        return;
+                    }
+                } catch (NumberFormatException ex) {
+                    resultArea.setText("Invalid mark. Please enter numeric values.");
+                    return;
                 }
             }
-        });
 
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                String name = nameField.getText();
-                int quantity = Integer.parseInt(quantityField.getText());
-                double price = Double.parseDouble(priceField.getText());
-                inventory.addProduct(new Product(id, name, quantity, price));
-                JOptionPane.showMessageDialog(null, "Product added successfully");
-            }
-        });
-
-        editButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                int quantity = Integer.parseInt(quantityField.getText());
-                double price = Double.parseDouble(priceField.getText());
-                inventory.editProduct(id, quantity, price);
-                JOptionPane.showMessageDialog(null, "Product edited successfully");
-            }
-        });
-
-        deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                inventory.deleteProduct(id);
-                JOptionPane.showMessageDialog(null, "Product deleted successfully");
-            }
-        });
-
-        reportButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int threshold = Integer.parseInt(thresholdField.getText());
-                ArrayList<Product> lowStockProducts = inventory.getLowStockProducts(threshold);
-                reportArea.setText("Low Stock Products:\n");
-                for (Product product : lowStockProducts) {
-                    reportArea.append(product.toString() + "\n");
-                }
-            }
-        });
-
-        mainPanel.setVisible(false);
+            resultArea.setText(studentMarks.displayMarks());
+        }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new InventoryManager().setVisible(true);
-            }
-        });
-    }
-}
-
-class Product {
-    private String id;
-    private String name;
-    private int quantity;
-    private double price;
-
-    public Product(String id, String name, int quantity, double price) {
-        this.id = id;
-        this.name = name;
-        this.quantity = quantity;
-        this.price = price;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    @Override
-    public String toString() {
-        return "Product [ID=" + id + ", Name=" + name + ", Quantity=" + quantity + ", Price=" + price + "]";
-    }
-}
-
-class Inventory {
-    private ArrayList<Product> products;
-
-    public Inventory() {
-        products = new ArrayList<>();
-    }
-
-    public void addProduct(Product product) {
-        products.add(product);
-    }
-
-    public void editProduct(String id, int quantity, double price) {
-        for (Product product : products) {
-            if (product.getId().equals(id)) {
-                product.setQuantity(quantity);
-                product.setPrice(price);
-                break;
-            }
-        }
-    }
-
-    public void deleteProduct(String id) {
-        products.removeIf(product -> product.getId().equals(id));
-    }
-
-    public Product getProduct(String id) {
-        for (Product product : products) {
-            if (product.getId().equals(id)) {
-                return product;
-            }
-        }
-        return null;
-    }
-
-    public ArrayList<Product> getLowStockProducts(int threshold) {
-        ArrayList<Product> lowStockProducts = new ArrayList<>();
-        for (Product product : products) {
-            if (product.getQuantity() < threshold) {
-                lowStockProducts.add(product);
-            }
-        }
-        return lowStockProducts;
-    }
-
-    public ArrayList<Product> getProducts() {
-        return products;
-    }
-}
-
-class User {
-    private String username;
-    private String password;
-
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public boolean authenticate(String password) {
-        return this.password.equals(password);
+        new StudentMarksGUI();
     }
 }
